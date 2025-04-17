@@ -18,8 +18,8 @@ llm = ChatOpenAI(
 
 class State(TypedDict):
     messages: Annotated[list, add_messages]
-    start: bool = False
 
+start = False
 graph = StateGraph(State)
 
 #get info node
@@ -69,7 +69,9 @@ def make_plan(state: State):
 @graph.add_node
 def tool_message(state: State):
     response = [ToolMessage(content='done', tool_call_id=state["messages"][-1].tool_calls[0]["id"])]
-    return {"messages": response, "start": True}
+    global start
+    start = True
+    return {"messages": response}
 
 #conditional edges
 def get_state(state: State):
@@ -79,7 +81,8 @@ def get_state(state: State):
     return END
 
 def get_start(state: State):
-    if state["start"]:
+    global start
+    if start:
         return "make_plan"
     return "get_info"
 
