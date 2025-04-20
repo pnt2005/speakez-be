@@ -24,6 +24,7 @@ graph = StateGraph(State)
 
 #get info node
 get_info_template = """You are an foreign language-speaking assistant helping users practice foreign language conversation.
+If user ask unrelevant question, do not answer and ask them again the previous question. 
 Get the following information from them by ask one by one question:
 - Their foreign language
 - Their language proficiency level
@@ -49,8 +50,12 @@ def get_info(state: State):
 
 #make plan node
 make_plan_template = """You are an foreign language-speaking assistant helping users practice foreign language conversation.
+If user ask unrelevant question, do not answer and ask them again the previous question. 
 Talk with user base on their level and topic: {reqs}.
-Check if they have mistake in sentence and correct it. Sometimes encourage them.
+If thier level is beginner, talk short sentences with easy words.
+If it is advanced, talk long sentence with difficult words.
+If it is immediate, talk immediate.
+If their answer is not good, fix it.
 """
 
 def make_plan_prompt(messages: list):
@@ -97,24 +102,20 @@ agent = graph.compile(checkpointer=MemorySaver())
 
 config = {"configurable": {"thread_id": "8"}}
 
-jwt_token = None
-def set_jwt_token(token):
-    global jwt_token
-    jwt_token = token
 
 import requests
 
-def response(query, text_id):
-    print(jwt_token)
+def response(token, query, chat_id):
+    print(token)
 
     headers = {
-        'Authorization': jwt_token,
+        'Authorization': token,
         'Content-Type': 'application/json',
     }
-    config = {"configurable": {"thread_id": "1"}}
+    config = {"configurable": {"thread_id": f'{chat_id}'}}
     res = agent.invoke({"messages": query}, config=config)
     try:
-        response = requests.post(f'http://127.0.0.1:5000/answers/{text_id}', headers=headers, json={'content': res['messages'][-1].content})
+        response = requests.post(f'http://127.0.0.1:5000/answers/{chat_id}', headers=headers, json={'content': res['messages'][-1].content})
     except: 
         print(response.status_code)
     print(response)
