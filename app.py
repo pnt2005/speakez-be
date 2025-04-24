@@ -181,7 +181,9 @@ def chats(user):
         item = Chat(user_id=user.id, time=time)
         db.session.add(item)
         db.session.commit()
-        return {'content': 'post success'}, 201
+        records = Chat.query.filter(Chat.user_id==user.id).all()
+        new_chat = records[-1]
+        return {'content': 'post success', 'new_chat_id': new_chat.id}, 201
  
 
 @app.route('/chats/<int:chat_id>', methods=['PUT'])
@@ -290,7 +292,7 @@ def progress(user, chat_id):
         if not records:
             return {'detail': f'progress with chat id {chat_id} not found'}, 404
         items = [{'id': record.id, 
-                  'duration': record.duration, 
+                  'duration': round(record.duration.total_seconds()/60, 2), 
                   'topic': record.topic, 
                   'total_turns': record.total_turns, 
                   'vocab': record.vocab, 
