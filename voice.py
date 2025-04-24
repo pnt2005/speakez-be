@@ -28,16 +28,6 @@ def trans(token, file_bytes, filename, chat_id):
     )
     text = transcript.text
     print("User said:", text)
-
-    # transcript = openai.Audio.transcribe(
-    #     "whisper-1", 
-    #     file, 
-    #     response_format="verbose_json"
-    # )
-    # text = transcript["text"]
-    # language = transcript["language"]
-    # print(f"[Lang: {language}] User said: {text}")
-
     # 2. Chat AI with same language
     answer = response(token, text, chat_id)
     print(answer)

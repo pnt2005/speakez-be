@@ -9,6 +9,7 @@ from langgraph.checkpoint.memory import MemorySaver
 from typing import List
 from langchain_core.messages import SystemMessage, AIMessage, HumanMessage, ToolMessage
 from pydantic import BaseModel
+import requests
 
 #define model and graph
 llm = ChatOpenAI(
@@ -23,13 +24,14 @@ start = False
 graph = StateGraph(State)
 
 #get info node
-get_info_template = """You are an foreign language-speaking assistant helping users practice foreign language conversation.
-If user ask unrelevant question, do not answer and ask them again the previous question. 
-Get the following information from them by ask one by one question:
-- Their foreign language
-- Their language proficiency level
-- The topic they want to practice 
-After you are able to discern all the information, call the relevant tool."""
+get_info_template = """You are a foreign language-speaking assistant helping users practice conversation.
+Ask one-by-one:
+- Foreign language
+- Proficiency level
+- Practice topic
+If user asks irrelevant questions, remind them of the previous question.
+After getting all info, call the info tool.
+"""
 
 def get_info_prompt(messages):
     return [SystemMessage(content=get_info_template)] + messages
@@ -49,13 +51,14 @@ def get_info(state: State):
     return {"messages": response}
 
 #make plan node
-make_plan_template = """You are an foreign language-speaking assistant helping users practice foreign language conversation.
-If user ask unrelevant question, do not answer and ask them again the previous question. 
-Talk with user base on their level and topic: {reqs}.
-If thier level is beginner, talk short sentences with easy words.
-If it is advanced, talk long sentence with difficult words.
-If it is immediate, talk immediate.
-If their answer is not good, fix it.
+make_plan_template = """You are an assistant helping users practice language conversation.
+Language, topic and level: {reqs}
+- Beginner: use short, simple sentences
+- Intermediate: normal conversation
+- Advanced: complex sentences and vocabulary
+If the user's sentence has issues, correct it.
+If the user wants to end the conversation, say goodbye and inform them their progress is being calculated.
+Then call the progress tool.
 """
 
 def make_plan_prompt(messages: list):
@@ -99,11 +102,6 @@ graph.add_edge("make_plan", END)
 
 #define agent
 agent = graph.compile(checkpointer=MemorySaver())
-
-config = {"configurable": {"thread_id": "8"}}
-
-
-import requests
 
 def response(token, query, chat_id):
     print(token)
