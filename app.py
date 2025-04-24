@@ -37,17 +37,20 @@ class Chat(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete = "CASCADE"), nullable=False)
     time = db.Column(db.DateTime, nullable=False)
+    name = db.Column(db.String)
 
-
+from sqlalchemy.dialects.postgresql import INTERVAL
 class Progress(db.Model):
     __tablename__ = 'progress'
     id = db.Column(db.Integer, primary_key=True)
     chat_id = db.Column(db.Integer, db.ForeignKey('chat.id', ondelete = "CASCADE"), nullable=False)
-    duration = db.Column(db.Integer, nullable=False)
+    duration = db.Column(INTERVAL, nullable=False)
     total_turns = db.Column(db.Integer, nullable=False)
     topic = db.Column(db.String, nullable=False)
     vocab = db.Column(db.Integer, nullable=False)
     grammar = db.Column(db.Integer, nullable=False)
+    fluency = db.Column(db.Integer, nullable=False)
+    feedback = db.Column(db.String, nullable=False)
 
 
 class Document(db.Model):
@@ -170,7 +173,7 @@ def chats(user):
         records = Chat.query.filter(Chat.user_id==user.id).all()
         if not records:
             return {'detail': f'chat with user id {user.id} not found'}, 404
-        items = [{'id': record.id, 'time': record.time, 'user_id': record.user_id} for record in records]
+        items = [{'id': record.id, 'time': record.time, 'name': record.name, 'user_id': record.user_id} for record in records]
         return items, 200
     
     if request.method == 'POST':
@@ -179,6 +182,20 @@ def chats(user):
         db.session.add(item)
         db.session.commit()
         return {'content': 'post success'}, 201
+ 
+
+@app.route('/chats/<int:chat_id>', methods=['PUT'])
+@token_required
+def update_chat(user, chat_id):
+    name = request.json.get('name')
+    if name is None:
+        return {'detail': 'Missing "name" in request'}, 400
+    chat = Chat.query.filter_by(id=chat_id).first()
+    if not chat:
+        return {'detail': 'Chat not found'}, 404
+    chat.name = name
+    db.session.commit()
+    return {'content': 'Chat updated successfully'}, 200
 
 
 @app.route('/questions/<int:chat_id>', methods = ['GET', 'POST'])
@@ -188,7 +205,7 @@ def questions(user, chat_id):
         records = Question.query.filter(Question.chat_id==chat_id).all()
         if not records:
             return {'detail': f'questions with chat id {chat_id} not found'}, 404
-        items = [{'id': record.id, 'content': record.content, 'chat_id': record.chat_id} for record in records]
+        items = [{'id': record.id, 'content': record.content, 'time': record.time, 'chat_id': record.chat_id} for record in records]
         return items, 200
     
     if request.method == 'POST':
@@ -219,7 +236,7 @@ def answers(user, chat_id):
         records = Answer.query.filter(Answer.chat_id == chat_id).all()
         if not records:
             return {'detail': f'answers with chat id {chat_id} not found'}, 404
-        items = [{'id': record.id, 'content': record.content, 'chat_id': record.chat_id} for record in records]
+        items = [{'id': record.id, 'content': record.content, 'time': record.time, 'chat_id': record.chat_id} for record in records]
         return items, 200
     
     if request.method == 'POST':
@@ -272,7 +289,15 @@ def progress(user, chat_id):
         records = Progress.query.filter(Progress.chat_id == chat_id).all()
         if not records:
             return {'detail': f'progress with chat id {chat_id} not found'}, 404
-        items = [{'id': record.id, 'duration': record.duration, 'topic': record.topic, 'total_turns': record.total_turns, 'chat_id': record.chat_id} for record in records]
+        items = [{'id': record.id, 
+                  'duration': record.duration, 
+                  'topic': record.topic, 
+                  'total_turns': record.total_turns, 
+                  'vocab': record.vocab, 
+                  'grammar': record.grammar, 
+                  'fluency': record.fluency, 
+                  'feedback': record.feedback, 
+                  'chat_id': record.chat_id} for record in records]
         return items, 200
 
     if request.method == 'POST':
@@ -283,8 +308,10 @@ def progress(user, chat_id):
         topic = request.json.get('topic')
         vocab = request.json.get('vocab')
         grammar = request.json.get('grammar')
+        fluency = request.json.get('fluency')
+        feedback = request.json.get('feedback')
         total_turns = Question.query.filter(Question.chat_id == chat_id).count()
-        item = Progress(duration=duration, topic=topic, total_turns=total_turns, vocab=vocab, grammar=grammar, chat_id=chat_id)
+        item = Progress(duration=duration, topic=topic, total_turns=total_turns, vocab=vocab, grammar=grammar, fluency=fluency, feedback=feedback, chat_id=chat_id)
         db.session.add(item)
         db.session.commit()
         return 'post success', 201
