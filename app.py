@@ -170,7 +170,7 @@ def chats(user):
         records = Chat.query.filter(Chat.user_id==user.id).all()
         if not records:
             return {'detail': f'chat with user id {user.id} not found'}, 404
-        items = [{'id': record.id, 'content': record.content, 'user_id': record.user_id} for record in records]
+        items = [{'id': record.id, 'time': record.time, 'user_id': record.user_id} for record in records]
         return items, 200
     
     if request.method == 'POST':
