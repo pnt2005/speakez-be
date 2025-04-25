@@ -1,3 +1,5 @@
+import os
+import time
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -145,6 +147,43 @@ graph.add_conditional_edges("converse", converse_next, ["progress", END])
 graph.add_edge("progress", END)
 
 agent = graph.compile(checkpointer=MemorySaver())
+
+
+def responseVoice(token, query, chat_id):
+    global global_token, global_chat_id
+    global_token = token
+    global_chat_id = chat_id
+
+    headers = {'Authorization': token, 'Content-Type': 'application/json'}
+    config = {"configurable": {"thread_id": f'{chat_id}'}}
+    res = agent.invoke({"messages": query}, config=config)
+
+    text = res['messages'][-1].content
+
+    # TTS
+    import openai
+    speech = openai.audio.speech.create(
+        model="tts-1",
+        voice="nova",
+        input=text,
+    )
+    timestamp = int(time.time())
+    file_path = f"./static/audios/{chat_id}_{timestamp}.mp3"
+    os.makedirs(os.path.dirname(file_path), exist_ok=True)
+    speech.stream_to_file(file_path)
+
+    file_url = f"static/audios/{chat_id}_{timestamp}.mp3"
+
+    try:
+        requests.post(
+            f'http://127.0.0.1:5000/answers/{chat_id}',
+            headers=headers,
+            json={'content': text}
+        )
+    except:
+        print("Failed to post answer")
+
+    return {"text": text, "audio_url": file_url}
 
 
 def response(token, query, chat_id):

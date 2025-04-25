@@ -282,7 +282,7 @@ def questions_voices(user, chat_id):
         db.session.add(new_file)
         db.session.commit()
         ans = trans(token, file_bytes, file.filename, chat_id)
-        return {'content': ans}, 201
+        return ans, 201
 
 
 @app.route('/progress/<int:chat_id>', methods = ['GET', 'POST'])

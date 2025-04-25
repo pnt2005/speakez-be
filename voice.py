@@ -1,19 +1,6 @@
 import openai
 import requests
-
-def response(token, content, chat_id):
-    print(token)
-    headers = {
-        'Authorization': token,
-        'Content-Type': 'application/json',
-    }
-    try:
-        response = requests.post(f'http://127.0.0.1:5000/questions/{chat_id}', headers=headers, json={'content': content})
-    except: 
-        print(response.status_code)
-    print(response)
-    return response.content.decode('utf-8')
-
+from chat_agent import responseVoice
 client = openai.OpenAI()
 
 def trans(token, file_bytes, filename, chat_id):
@@ -29,7 +16,7 @@ def trans(token, file_bytes, filename, chat_id):
     text = transcript.text
     print("User said:", text)
     # 2. Chat AI with same language
-    answer = response(token, text, chat_id)
+    answer = responseVoice(token, text, chat_id)
     print(answer)
     return answer
 
