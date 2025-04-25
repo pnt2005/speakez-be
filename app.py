@@ -166,7 +166,7 @@ def documents(user, chat_id):
         return {'message': 'upload success'}, 200
 
 
-@app.route('/chats', methods = ['GET', 'POST'])
+@app.route('/chats', methods = ['GET', 'POST', 'DELETE'])
 @token_required
 def chats(user):
     if request.method == 'GET':
@@ -184,20 +184,38 @@ def chats(user):
         records = Chat.query.filter(Chat.user_id==user.id).all()
         new_chat = records[-1]
         return {'content': 'post success', 'new_chat_id': new_chat.id}, 201
+    
+    if request.method == 'DELETE':
+        chats = Chat.query.filter_by(user_id=user.id).all()
+        if not chats:
+            return {'detail': f'chat with user id {user.id} not found'}, 404
+        for chat in chats:
+            db.session.delete(chat)
+        db.session.commit()
+        return {'content': 'All chats deleted successfully for the user'}, 200
  
 
-@app.route('/chats/<int:chat_id>', methods=['PUT'])
+@app.route('/chats/<int:chat_id>', methods=['PUT', 'DELETE'])
 @token_required
-def update_chat(user, chat_id):
-    name = request.json.get('name')
-    if name is None:
-        return {'detail': 'Missing "name" in request'}, 400
-    chat = Chat.query.filter_by(id=chat_id).first()
-    if not chat:
-        return {'detail': 'Chat not found'}, 404
-    chat.name = name
-    db.session.commit()
-    return {'content': 'Chat updated successfully'}, 200
+def chat(user, chat_id):
+    if request.method == 'PUT':
+        name = request.json.get('name')
+        if name is None:
+            return {'detail': 'Missing "name" in request'}, 400
+        chat = Chat.query.filter_by(id=chat_id).first()
+        if not chat:
+            return {'detail': 'Chat not found'}, 404
+        chat.name = name
+        db.session.commit()
+        return {'content': 'Chat updated successfully'}, 200
+    
+    if request.method == 'DELETE':
+        chat = Chat.query.filter_by(id=chat_id).first()
+        if not chat:
+            return {'detail': f'Chat with id {chat_id} not found'}, 404
+        db.session.delete(chat)
+        db.session.commit()
+        return {'content': 'Chat deleted successfully'}, 200
 
 
 @app.route('/questions/<int:chat_id>', methods = ['GET', 'POST'])
