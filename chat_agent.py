@@ -24,6 +24,7 @@ class State(TypedDict):
 
 graph = StateGraph(State)
 start = False
+end = False
 
 # Get Info Node
 get_info_template = """You are a foreign language-speaking assistant helping users practice conversation.
@@ -62,7 +63,7 @@ Language, topic and level: {reqs}
 - Intermediate: normal conversation
 - Advanced: complex sentences and vocabulary
 If the user's sentence has issues, correct it.
-If the user wants to end the conversation, say goodbye and call the 'EndConversation' tool with confirm=true.
+If the user wants to end the conversation, say goodbye and tell them to wait while their practice results and feedback are being processed.Then call the 'EndConversation' tool with confirm=true.
 """
 
 def converse_prompt(messages: list):
@@ -134,7 +135,11 @@ graph.add_conditional_edges("get_info", get_state, ["tool_message", END])
 graph.add_edge("tool_message", "converse")
 
 def converse_next(state: State):
-    return "progress" if state.get("end_conversation") else END
+    if state.get("end_conversation"):
+        global end
+        end = True
+        return "progress"
+    return END
 
 graph.add_conditional_edges("converse", converse_next, ["progress", END])
 graph.add_edge("progress", END)
@@ -143,7 +148,7 @@ agent = graph.compile(checkpointer=MemorySaver())
 
 
 def response(token, query, chat_id):
-    global global_token, global_chat_id
+    global global_token, global_chat_id, end
     global_token = token
     global_chat_id = chat_id
 
@@ -159,7 +164,8 @@ def response(token, query, chat_id):
         )
     except:
         print("Failed to post answer")
-    return res['messages'][-1].content
+    return {'content': res['messages'][-1].content, 'end': end}
+    #return res['messages'][-1].content
 
 
 def progress(token, chat_id, topic, score):

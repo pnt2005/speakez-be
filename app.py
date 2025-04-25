@@ -39,12 +39,12 @@ class Chat(db.Model):
     time = db.Column(db.DateTime, nullable=False)
     name = db.Column(db.String)
 
-from sqlalchemy.dialects.postgresql import INTERVAL
+
 class Progress(db.Model):
     __tablename__ = 'progress'
     id = db.Column(db.Integer, primary_key=True)
     chat_id = db.Column(db.Integer, db.ForeignKey('chat.id', ondelete = "CASCADE"), nullable=False)
-    duration = db.Column(INTERVAL, nullable=False)
+    duration = db.Column(db.Float, nullable=False)
     total_turns = db.Column(db.Integer, nullable=False)
     topic = db.Column(db.String, nullable=False)
     vocab = db.Column(db.Integer, nullable=False)
@@ -228,7 +228,8 @@ def questions(user, chat_id):
         item = Question(content=item_content, chat_id = chat_id, time=time)
         db.session.add(item)
         db.session.commit()
-        return {'content': response(token, item_content, chat_id)}, 201
+        return response(token, item_content, chat_id), 201
+        #return {'content': response(token, item_content, chat_id)}, 201
 
 
 @app.route('/answers/<int:chat_id>', methods = ['GET', 'POST'])
@@ -292,7 +293,7 @@ def progress(user, chat_id):
         if not records:
             return {'detail': f'progress with chat id {chat_id} not found'}, 404
         items = [{'id': record.id, 
-                  'duration': round(record.duration.total_seconds()/60, 2), 
+                  'duration': record.duration, 
                   'topic': record.topic, 
                   'total_turns': record.total_turns, 
                   'vocab': record.vocab, 
@@ -306,6 +307,7 @@ def progress(user, chat_id):
         start = Question.query.filter(Question.chat_id == chat_id).order_by(asc(Question.time)).first()
         end = Question.query.filter(Question.chat_id == chat_id).order_by(desc(Question.time)).first()
         duration = end.time - start.time
+        duration = round(duration.total_seconds() / 60, 2)
 
         topic = request.json.get('topic')
         vocab = request.json.get('vocab')
