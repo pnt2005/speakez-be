@@ -1,5 +1,6 @@
 import base64
 import os
+from random import randint
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import asc, desc
@@ -33,6 +34,8 @@ class User(db.Model):
     phone_number = db.Column(db.String)
     gender = db.Column(db.String)
     avatar = db.Column(db.String)
+    reset_code = db.Column(db.Integer)
+    reset_code_exp = db.Column(db.DateTime) 
 
 
 class Chat(db.Model):
@@ -417,6 +420,55 @@ def avatars(user):
                 record.avatar = filepath
         db.session.commit()
         return 'update avatar success', 201
+
+
+from flask_mail import Mail, Message
+app.config['MAIL_SERVER'] = 'smtp.gmail.com'
+app.config['MAIL_PORT'] = 587
+app.config['MAIL_USE_TLS'] = True
+app.config['MAIL_USERNAME'] = 'phannthanh2005@gmail.com'        # tài khoản Gmail
+app.config['MAIL_PASSWORD'] = 'sinv pryq optg oiyy'      # mật khẩu ứng dụng
+mail = Mail(app)
+
+
+@app.route('/forgot_password', methods=['POST'])
+def forgot_password():
+    email = request.json.get('email')
+    user = User.query.filter_by(email=email).first()
+    if not user:
+        return {'message': 'Email not found'}, 404
+    otp = str(randint(100000, 999999)) 
+    user.reset_code = otp
+    user.reset_code_exp = datetime.now(timezone.utc) + timedelta(minutes=10)
+    db.session.commit()
+
+    msg = Message(
+        subject='Your OTP to reset password',
+        sender=app.config['MAIL_USERNAME'],
+        recipients=[email],
+        body=f'Your OTP is: {otp}. It will expire in 10 minutes.'
+    )
+    mail.send(msg)
+    return {'message': 'OTP sent to your email'}, 200
+
+
+@app.route('/reset_password', methods=['POST'])
+def reset_password():
+    email = request.json.get('email')
+    otp = request.json.get('otp')
+    new_password = request.json.get('new_password')
+    user = User.query.filter_by(email=email).first()
+    exp = (user.reset_code_exp).replace(tzinfo=timezone.utc)
+    if not user:
+        return {'message': 'Email not found'}, 404
+    if user.reset_code != otp or exp < datetime.now(timezone.utc):
+        return {'message': 'Invalid or expired OTP'}, 400
+
+    user.password = generate_password_hash(new_password)
+    user.reset_code = None
+    user.reset_code_exp = None
+    db.session.commit()
+    return {'message': 'Password reset successful'}, 200
 
 
 @app.route('/')
