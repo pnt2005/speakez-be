@@ -150,10 +150,31 @@ def login():
     if check_password_hash(pwhash=user.password, password=password):
         global token
         token = jwt.encode({'id': user.id, 
-                            'exp': datetime.now(timezone.utc) + timedelta(hours=3000)}, app.config['SECRET_KEY'], ALGORITHM)
-        return {'token': token}, 201
+                            'exp': datetime.now(timezone.utc) + timedelta(minutes=15)}, app.config['SECRET_KEY'], ALGORITHM)
+        refresh_token = jwt.encode({
+            'id': user.id,
+            'exp': datetime.now(timezone.utc) + timedelta(days=7)
+        }, app.config['SECRET_KEY'], algorithm=ALGORITHM)
+        return {'token': token, 'refresh_token': refresh_token}, 201
     else:
         return {'message': 'password is wrong'}, 403
+
+
+@app.route('/refresh', methods=['POST'])
+def refresh():
+    refresh_token = request.json.get('refresh_token')
+    try:
+        data = jwt.decode(refresh_token, app.config['SECRET_KEY'], algorithms=ALGORITHM)
+        global token
+        token = jwt.encode({
+            'id': data['id'],
+            'exp': datetime.now(timezone.utc) + timedelta(minutes=15)
+        }, app.config['SECRET_KEY'], algorithm=ALGORITHM)
+        return {'token': token}, 200
+    except jwt.ExpiredSignatureError:
+        return {'message': 'Refresh token expired'}, 401
+    except jwt.InvalidTokenError:
+        return {'message': 'Invalid refresh token'}, 403
 
 
 @app.route('/documents/<int:chat_id>', methods = ['GET', 'POST'])
