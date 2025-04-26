@@ -1,4 +1,5 @@
 import base64
+import os
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import asc, desc
@@ -11,6 +12,7 @@ from flask_cors import CORS
 from datetime import datetime, timedelta, timezone
 from voice import trans
 import requests
+from werkzeug.utils import secure_filename
 
 
 app = Flask(__name__)
@@ -30,6 +32,7 @@ class User(db.Model):
     password = db.Column(db.String, nullable = False)
     phone_number = db.Column(db.String)
     gender = db.Column(db.String)
+    avatar = db.Column(db.String)
 
 
 class Chat(db.Model):
@@ -116,9 +119,15 @@ def signup():
     phone_number = request.json.get('phone_number')
     gender = request.json.get('gender')
     user = User.query.filter(User.email == email).first()
+    avatar = 'static/avatars/default.jpg'
 
     if not user:
-        record = User(email=email, name=name, phone_number=phone_number, gender=gender, password = generate_password_hash(password))
+        record = User(email=email, 
+                      name=name, 
+                      phone_number=phone_number, 
+                      gender=gender, 
+                      password = generate_password_hash(password),
+                      avatar=avatar)
         db.session.add(record)
         db.session.commit()
         return {'message': 'sign up success'}, 201  
@@ -337,6 +346,56 @@ def progress(user, chat_id):
         db.session.add(item)
         db.session.commit()
         return 'post success', 201
+
+
+UPLOAD_FOLDER = 'static/avatars'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+@app.route('/users', methods = ['GET', 'PUT'])
+@token_required
+def users(user):
+    if request.method == 'GET':
+        record = User.query.filter(User.id == user.id).first()
+        if not record:
+            return {'detail': f'user with user id {user.id} not found'}, 404
+        item = {'id': record.id, 
+                'email': record.email, 
+                'name': record.name, 
+                'password': record.password, 
+                'phone_number': record.phone_number, 
+                'gender': record.gender,
+                'avatar': record.avatar}
+        return item, 200
+    
+    if request.method == 'PUT':
+        record = User.query.filter(User.id == user.id).first()
+        record.email = request.json.get('email')
+        record.name = request.json.get('name')
+        record.password = generate_password_hash(request.json.get('password'))
+        record.phone_number = request.json.get('phone_number')
+        record.gender = request.json.get('gender')
+        db.session.commit()
+        return 'update user success', 201
+
+
+@app.route('/avatars', methods = ['PUT'])
+@token_required
+def avatars(user):
+    if request.method == 'PUT':
+        record = User.query.filter(User.id == user.id).first()
+        if 'file' in request.files:
+            file = request.files['file']
+            if file and allowed_file(file.filename):
+                filename = secure_filename(file.filename)
+                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+                file.save(filepath)
+                record.avatar = filepath
+        db.session.commit()
+        return 'update avatar success', 201
 
 
 @app.route('/')
