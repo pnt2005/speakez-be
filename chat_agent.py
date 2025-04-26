@@ -84,7 +84,13 @@ def converse(state: State):
         call["name"] == "EndConversation" and call["args"].get("confirm")
         for call in getattr(response, "tool_calls", [])
     )
-    return {"messages": state["messages"] + [response], "end_conversation": end}
+    next_state = {
+        "messages": state["messages"] + [response],
+        "end_conversation": end,
+    }
+    if end:
+        next_state["status"] = "end"
+    return next_state
 
 
 # Progress Node
@@ -124,9 +130,11 @@ def get_state(state: State):
 
 @graph.add_node
 def tool_message(state: State):
-    state["status"] = "start"
     last_tool = state["messages"][-1].tool_calls[0]["id"]
-    return {"messages": [ToolMessage(content='done', tool_call_id=last_tool)]}
+    return {
+        "messages": [ToolMessage(content='done', tool_call_id=last_tool)],
+        "status": "start"
+    }
 
 # Edges
 graph.add_conditional_edges(START, get_start, ["get_info", "converse"])
@@ -135,7 +143,6 @@ graph.add_edge("tool_message", "converse")
 
 def converse_next(state: State):
     if state.get("end_conversation"):
-        state["status"] = "end"
         return "progress"
     return END
 
@@ -210,7 +217,7 @@ def response(token, query, chat_id):
         print("Failed to post answer")
     print(res.get('status'))
     print(res.get('chat_id'))
-    return {'content': res['messages'][-1].content, 'end': res.get('status')}
+    return {'content': res['messages'][-1].content, 'status': res.get('status')}
     #return res['messages'][-1].content
 
 

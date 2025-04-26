@@ -85,7 +85,7 @@ class Answer(db.Model):
     content = db.Column(db.String, nullable=False)
     chat_id = db.Column(db.Integer, db.ForeignKey('chat.id', ondelete = "CASCADE"), nullable=False)
     time = db.Column(db.DateTime, nullable=False)
-    language = db.Column(db.String, nullable=False)
+    language = db.Column(db.String)
 
     def __repr__(self):
         return f'{self.content}'
