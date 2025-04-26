@@ -3,6 +3,21 @@ import requests
 from chat_agent import responseVoice
 client = openai.OpenAI()
 
+language_locale_map = {
+    "english": "en-US",
+    "vietnamese": "vi-VN",
+    "japanese": "ja-JP",
+    "korean": "ko-KR",
+    "chinese": "zh-CN",
+    "french": "fr-FR",
+    "spanish": "es-ES",
+    "german": "de-DE",
+    "italian": "it-IT",
+    "portuguese": "pt-PT",
+    "hindi": "hi-IN",
+    "arabic": "ar-SA"
+}
+
 def trans(token, file_bytes, filename, chat_id):
     # 1. Transcribe + detect language
     import io
@@ -15,7 +30,7 @@ def trans(token, file_bytes, filename, chat_id):
         response_format="verbose_json"
     )
     text = transcript.text
-    language = transcript.language 
+    language = language_locale_map.get(transcript.language, "en-US")
     print("User said:", text)
     print(language)
     # 2. Chat AI with same language

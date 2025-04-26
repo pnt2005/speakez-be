@@ -14,19 +14,18 @@ from pydantic import BaseModel
 import requests
 import json
 
-global_token = None
-global_chat_id = None
-
 # Define model
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
 
 # Define state
 class State(TypedDict):
     messages: Annotated[list, add_messages]
+    token: str
+    chat_id: str
+    status: str
 
 graph = StateGraph(State)
-start = False
-end = False
+
 
 # Get Info Node
 get_info_template = """You are a foreign language-speaking assistant helping users practice conversation.
@@ -110,13 +109,12 @@ def progress(state: State):
     """
     res = llm.invoke([SystemMessage(content=prompt)])
     result = {"topic": topic,"scores": res.content}
-    progress(global_token, global_chat_id, topic, res.content)
+    progress(state["token"], state["chat_id"], topic, res.content)
     print(result)
 
 # Conditional edges
 def get_start(state: State):
-    global start
-    return "converse" if start else "get_info"
+    return "converse" if state.get("status")=="start" else "get_info"
 
 def get_state(state: State):
     messages = state["messages"]
@@ -126,8 +124,7 @@ def get_state(state: State):
 
 @graph.add_node
 def tool_message(state: State):
-    global start
-    start = True
+    state["status"] = "start"
     last_tool = state["messages"][-1].tool_calls[0]["id"]
     return {"messages": [ToolMessage(content='done', tool_call_id=last_tool)]}
 
@@ -138,8 +135,7 @@ graph.add_edge("tool_message", "converse")
 
 def converse_next(state: State):
     if state.get("end_conversation"):
-        global end
-        end = True
+        state["status"] = "end"
         return "progress"
     return END
 
@@ -148,32 +144,31 @@ graph.add_edge("progress", END)
 
 agent = graph.compile(checkpointer=MemorySaver())
 
+def init(token, chat_id):
+    config = {"configurable": {"thread_id": f'{chat_id}'}}
+    res = agent.invoke({"token": token, "chat_id": chat_id, "status": "get_info"}, config=config)
 
 def responseVoice(token, query, chat_id, language):
-    global global_token, global_chat_id
-    global_token = token
-    global_chat_id = chat_id
-
     headers = {'Authorization': token, 'Content-Type': 'application/json'}
     config = {"configurable": {"thread_id": f'{chat_id}'}}
-    res = agent.invoke({"messages": query}, config=config)
+    res = agent.invoke({"messages": query, "token": token, "chat_id": chat_id}, config=config)
 
     text = res['messages'][-1].content
 
     # TTS
     import openai
     lang_to_voice = {
-        "vietnamese": "nova",
-        "japanese": "shimmer",
-        "korean": "shimmer",
-        "chinese": "shimmer",
-        "french": "echo",
-        "spanish": "echo",
-        "german": "echo", 
-        "italian": "echo",
-        "portuguese": "echo",
-        "hindi": "onyx",
-        "arabic": "onyx"
+        "vi-VN": "nova",        # Vietnamese
+        "ja-JP": "shimmer",     # Japanese
+        "ko-KR": "shimmer",     # Korean
+        "zh-CN": "shimmer",     # Chinese
+        "fr-FR": "echo",        # French
+        "es-ES": "echo",        # Spanish
+        "de-DE": "echo",        # German
+        "it-IT": "echo",        # Italian
+        "pt-PT": "echo",        # Portuguese
+        "hi-IN": "onyx",        # Hindi
+        "ar-SA": "onyx"
     }
     voice = lang_to_voice.get(language, "nova")
     speech = openai.audio.speech.create(
@@ -192,7 +187,7 @@ def responseVoice(token, query, chat_id, language):
         requests.post(
             f'http://127.0.0.1:5000/answers/{chat_id}',
             headers=headers,
-            json={'content': text}
+            json={'content': text, 'language': language}
         )
     except:
         print("Failed to post answer")
@@ -201,13 +196,9 @@ def responseVoice(token, query, chat_id, language):
 
 
 def response(token, query, chat_id):
-    global global_token, global_chat_id, end
-    global_token = token
-    global_chat_id = chat_id
-
     headers = {'Authorization': token, 'Content-Type': 'application/json'}
     config = {"configurable": {"thread_id": f'{chat_id}'}}
-    res = agent.invoke({"messages": query}, config=config)
+    res = agent.invoke({"messages": query, "token": token, "chat_id": chat_id}, config=config)
 
     try:
         requests.post(
@@ -217,7 +208,9 @@ def response(token, query, chat_id):
         )
     except:
         print("Failed to post answer")
-    return {'content': res['messages'][-1].content, 'end': end}
+    print(res.get('status'))
+    print(res.get('chat_id'))
+    return {'content': res['messages'][-1].content, 'end': res.get('status')}
     #return res['messages'][-1].content
 
 

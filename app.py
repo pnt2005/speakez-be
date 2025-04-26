@@ -4,7 +4,7 @@ from random import randint
 from flask import Flask, request
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import asc, desc
-from chat_agent import response
+from chat_agent import init, response
 from werkzeug.security import generate_password_hash, check_password_hash
 import jwt
 from functools import wraps
@@ -85,6 +85,7 @@ class Answer(db.Model):
     content = db.Column(db.String, nullable=False)
     chat_id = db.Column(db.Integer, db.ForeignKey('chat.id', ondelete = "CASCADE"), nullable=False)
     time = db.Column(db.DateTime, nullable=False)
+    language = db.Column(db.String, nullable=False)
 
     def __repr__(self):
         return f'{self.content}'
@@ -218,6 +219,7 @@ def chats(user):
         db.session.commit()
         records = Chat.query.filter(Chat.user_id==user.id).all()
         new_chat = records[-1]
+        init(token, new_chat.id)
         return {'content': 'post success', 'new_chat_id': new_chat.id}, 201
     
     if request.method == 'DELETE':
@@ -294,13 +296,14 @@ def answers(user, chat_id):
         records = Answer.query.filter(Answer.chat_id == chat_id).all()
         if not records:
             return {'detail': f'answers with chat id {chat_id} not found'}, 404
-        items = [{'id': record.id, 'content': record.content, 'time': record.time, 'chat_id': record.chat_id} for record in records]
+        items = [{'id': record.id, 'content': record.content, 'time': record.time, 'language': record.language, 'chat_id': record.chat_id} for record in records]
         return items, 200
     
     if request.method == 'POST':
         item_content = request.json.get('content')
+        item_language = request.json.get('language')
         time = datetime.now(timezone.utc) + timedelta(hours=7)
-        item = Answer(content=item_content, chat_id = chat_id, time=time)
+        item = Answer(content=item_content, language=item_language, chat_id = chat_id, time=time)
         db.session.add(item)
         db.session.commit()
         return 'post success', 201
