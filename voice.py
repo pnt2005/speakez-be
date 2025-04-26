@@ -11,12 +11,15 @@ def trans(token, file_bytes, filename, chat_id):
 
     transcript = client.audio.transcriptions.create(
         model="whisper-1",
-        file=audio_file
+        file=audio_file,
+        response_format="verbose_json"
     )
     text = transcript.text
+    language = transcript.language 
     print("User said:", text)
+    print(language)
     # 2. Chat AI with same language
-    answer = responseVoice(token, text, chat_id)
-    print(answer)
+    answer = responseVoice(token, text, chat_id, language)
+    #print(answer)
     return answer
 

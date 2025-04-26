@@ -44,6 +44,7 @@ class Chat(db.Model):
     user_id = db.Column(db.Integer, db.ForeignKey('user.id', ondelete = "CASCADE"), nullable=False)
     time = db.Column(db.DateTime, nullable=False)
     name = db.Column(db.String)
+    status = db.Column(db.String)
 
 
 class Progress(db.Model):
@@ -57,6 +58,7 @@ class Progress(db.Model):
     grammar = db.Column(db.Integer, nullable=False)
     fluency = db.Column(db.Integer, nullable=False)
     feedback = db.Column(db.String, nullable=False)
+    response_time = db.Column(db.Float, nullable=False)
 
 
 class Document(db.Model):
@@ -206,12 +208,12 @@ def chats(user):
         records = Chat.query.filter(Chat.user_id==user.id).all()
         if not records:
             return {'detail': f'chat with user id {user.id} not found'}, 404
-        items = [{'id': record.id, 'time': record.time, 'name': record.name, 'user_id': record.user_id} for record in records]
+        items = [{'id': record.id, 'time': record.time, 'name': record.name, 'status': record.status, 'user_id': record.user_id} for record in records]
         return items, 200
     
     if request.method == 'POST':
         time = datetime.now(timezone.utc) + timedelta(hours=7)
-        item = Chat(user_id=user.id, time=time)
+        item = Chat(user_id=user.id, time=time, status='start')
         db.session.add(item)
         db.session.commit()
         records = Chat.query.filter(Chat.user_id==user.id).all()
@@ -233,12 +235,14 @@ def chats(user):
 def chat(user, chat_id):
     if request.method == 'PUT':
         name = request.json.get('name')
+        status = request.json.get('status')
         if name is None:
             return {'detail': 'Missing "name" in request'}, 400
         chat = Chat.query.filter_by(id=chat_id).first()
         if not chat:
             return {'detail': 'Chat not found'}, 404
         chat.name = name
+        chat.status = status
         db.session.commit()
         return {'content': 'Chat updated successfully'}, 200
     
@@ -351,6 +355,7 @@ def progress(user, chat_id):
                   'grammar': record.grammar, 
                   'fluency': record.fluency, 
                   'feedback': record.feedback, 
+                  'response_time': record.response_time,
                   'chat_id': record.chat_id} for record in records]
         return items, 200
 
@@ -366,7 +371,16 @@ def progress(user, chat_id):
         fluency = request.json.get('fluency')
         feedback = request.json.get('feedback')
         total_turns = Question.query.filter(Question.chat_id == chat_id).count()
-        item = Progress(duration=duration, topic=topic, total_turns=total_turns, vocab=vocab, grammar=grammar, fluency=fluency, feedback=feedback, chat_id=chat_id)
+        response_time = duration/total_turns
+        item = Progress(duration=duration, 
+                        topic=topic, 
+                        total_turns=total_turns, 
+                        vocab=vocab, 
+                        grammar=grammar, 
+                        fluency=fluency, 
+                        feedback=feedback, 
+                        response_time=response_time,
+                        chat_id=chat_id)
         db.session.add(item)
         db.session.commit()
         return 'post success', 201

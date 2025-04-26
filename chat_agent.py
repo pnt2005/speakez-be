@@ -149,7 +149,7 @@ graph.add_edge("progress", END)
 agent = graph.compile(checkpointer=MemorySaver())
 
 
-def responseVoice(token, query, chat_id):
+def responseVoice(token, query, chat_id, language):
     global global_token, global_chat_id
     global_token = token
     global_chat_id = chat_id
@@ -162,9 +162,23 @@ def responseVoice(token, query, chat_id):
 
     # TTS
     import openai
+    lang_to_voice = {
+        "vietnamese": "nova",
+        "japanese": "shimmer",
+        "korean": "shimmer",
+        "chinese": "shimmer",
+        "french": "echo",
+        "spanish": "echo",
+        "german": "echo", 
+        "italian": "echo",
+        "portuguese": "echo",
+        "hindi": "onyx",
+        "arabic": "onyx"
+    }
+    voice = lang_to_voice.get(language, "nova")
     speech = openai.audio.speech.create(
         model="tts-1",
-        voice="nova",
+        voice=voice,
         input=text,
     )
     timestamp = int(time.time())
@@ -183,7 +197,7 @@ def responseVoice(token, query, chat_id):
     except:
         print("Failed to post answer")
 
-    return {"text": text, "audio_url": file_url}
+    return {"text": text, "audio_url": file_url, "language": language}
 
 
 def response(token, query, chat_id):
@@ -227,7 +241,7 @@ def progress(token, chat_id, topic, score):
         response = requests.put(
             f'http://127.0.0.1:5000/chats/{chat_id}',
             headers=headers,
-            json={'name': topic}
+            json={'name': topic, 'status': 'end'}
         )
     except:
         print(response.status_code)
