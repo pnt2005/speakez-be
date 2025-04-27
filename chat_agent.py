@@ -263,16 +263,27 @@ def progress(token, chat_id, topic, score):
 
 from pydub import AudioSegment
 import numpy as np
+
 def bassProfile(file_path):
     audio = AudioSegment.from_mp3(file_path)
-    chunk_length_ms = 500  # 1000ms = 1s
+    chunk_length_ms = 500  # 500ms = 0.5s
     chunks = list(audio[::chunk_length_ms])
-
     bass_profile = []
 
     for idx, chunk in enumerate(chunks):
-        samples = np.array(chunk.get_array_of_samples())
-        intensity = np.abs(samples).mean() / (2**15)
+        raw_data = chunk.raw_data
+        sample_width = chunk.sample_width
+        num_samples = len(raw_data) // sample_width
+        if sample_width == 1:
+            dtype = np.uint8  
+        elif sample_width == 2:
+            dtype = np.int16  
+        elif sample_width == 4:
+            dtype = np.int32  
+        else:
+            raise ValueError(f"Unsupported sample width: {sample_width}")
+        samples = np.frombuffer(raw_data, dtype=dtype)
+        intensity = np.abs(samples).mean() / np.iinfo(dtype).max
         bass_profile.append({
             "time": round(idx * chunk_length_ms / 1000, 2),
             "intensity": round(float(intensity), 2)
