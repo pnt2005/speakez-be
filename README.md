@@ -17,8 +17,4 @@ pip install -r requirements.txt
 python app.py
 
 # Lưu ý: cần tạo các biến sau
-OPENAI_API_KEY
-DATABASE_URL
-SECRET_KEY
-MAIL_USERNAME
-MAIL_PASSWORD
+OPENAI_API_KEY, DATABASE_URL, SECRET_KEY, MAIL_USERNAME, MAIL_PASSWORD
