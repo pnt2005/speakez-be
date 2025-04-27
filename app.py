@@ -410,9 +410,7 @@ def users(user):
     
     if request.method == 'PUT':
         record = User.query.filter(User.id == user.id).first()
-        record.email = request.json.get('email')
         record.name = request.json.get('name')
-        record.password = generate_password_hash(request.json.get('password'))
         record.phone_number = request.json.get('phone_number')
         record.gender = request.json.get('gender')
         db.session.commit()
