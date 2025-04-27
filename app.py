@@ -18,8 +18,8 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 CORS(app, supports_credentials=True)
-app.config['SQLALCHEMY_DATABASE_URI'] = "postgresql://postgres:postgres@172.24.167.166:5433/flask"
-app.config['SECRET_KEY'] = '06a9fb13c0394bf2966d58a5ebd14f86'
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv('DATABASE_URL')
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 ALGORITHM = "HS256"
 db = SQLAlchemy(app)
 token = None
@@ -437,8 +437,8 @@ from flask_mail import Mail, Message
 app.config['MAIL_SERVER'] = 'smtp.gmail.com'
 app.config['MAIL_PORT'] = 587
 app.config['MAIL_USE_TLS'] = True
-app.config['MAIL_USERNAME'] = 'phannthanh2005@gmail.com'        # tài khoản Gmail
-app.config['MAIL_PASSWORD'] = 'sinv pryq optg oiyy'      # mật khẩu ứng dụng
+app.config['MAIL_USERNAME'] = os.getenv('MAIL_USERNAME')        # tài khoản Gmail
+app.config['MAIL_PASSWORD'] = os.getenv('MAIL_PASSWORD')      # mật khẩu ứng dụng
 mail = Mail(app)
 
 
