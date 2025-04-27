@@ -13,6 +13,8 @@ from langchain_core.messages import SystemMessage, AIMessage, ToolMessage, Human
 from pydantic import BaseModel
 import requests
 import json
+from langdetect import detect
+import openai
 
 # Define model
 llm = ChatOpenAI(model="gpt-4o-mini", temperature=0.7)
@@ -161,9 +163,6 @@ def responseVoice(token, query, chat_id, language):
     res = agent.invoke({"messages": query, "token": token, "chat_id": chat_id}, config=config)
 
     text = res['messages'][-1].content
-
-    # TTS
-    import openai
     lang_to_voice = {
         "vi-VN": "nova",        # Vietnamese
         "ja-JP": "shimmer",     # Japanese
@@ -207,18 +206,34 @@ def response(token, query, chat_id):
     config = {"configurable": {"thread_id": f'{chat_id}'}}
     res = agent.invoke({"messages": query, "token": token, "chat_id": chat_id}, config=config)
 
+    language_mapping = {
+        "ja": "ja-JP",
+        "en": "en-US",
+        "vi": "vi-VN",
+        "fr": "fr-FR",
+        "es": "es-ES",
+        "ko": "ko-KR",
+        "zh": "zh-CN",
+        "de": "de-DE",
+        "it": "it-IT",
+        "pt": "pt-PT",
+        "hi": "hi-IN",
+        "ar": "ar-SA"
+    }
+    language = detect(res['messages'][-1].content)
+    locale = language_mapping.get(language, "en-US")
+
     try:
         requests.post(
             f'http://127.0.0.1:5000/answers/{chat_id}',
             headers=headers,
-            json={'content': res['messages'][-1].content}
+            json={'content': res['messages'][-1].content, 'language': locale}
         )
     except:
         print("Failed to post answer")
     print(res.get('status'))
     print(res.get('chat_id'))
-    return {'content': res['messages'][-1].content, 'status': res.get('status')}
-    #return res['messages'][-1].content
+    return {'content': res['messages'][-1].content, 'language': locale, 'status': res.get('status')}
 
 
 def progress(token, chat_id, topic, score):
