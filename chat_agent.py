@@ -188,7 +188,6 @@ def responseVoice(token, query, chat_id, language):
     speech.stream_to_file(file_path)
 
     file_url = f"static/audios/{chat_id}_{timestamp}.mp3"
-
     try:
         requests.post(
             f'http://127.0.0.1:5000/answers/{chat_id}',
@@ -198,7 +197,7 @@ def responseVoice(token, query, chat_id, language):
     except:
         print("Failed to post answer")
 
-    return {"question": query, "text": text, "audio_url": file_url, "language": language}
+    return {"question": query, "text": text, "audio_url": file_url, "language": language, "bassProfile": bassProfile(file_url)}
 
 
 def response(token, query, chat_id):
@@ -260,3 +259,23 @@ def progress(token, chat_id, topic, score):
         )
     except:
         print(response.status_code)
+
+
+from pydub import AudioSegment
+import numpy as np
+def bassProfile(file_path):
+    audio = AudioSegment.from_mp3(file_path)
+    chunk_length_ms = 500  # 1000ms = 1s
+    chunks = list(audio[::chunk_length_ms])
+
+    bass_profile = []
+
+    for idx, chunk in enumerate(chunks):
+        samples = np.array(chunk.get_array_of_samples())
+        intensity = np.abs(samples).mean() / (2**15)
+        bass_profile.append({
+            "time": round(idx * chunk_length_ms / 1000, 2),
+            "intensity": round(float(intensity), 2)
+        })
+    print(bass_profile)
+    return bass_profile
