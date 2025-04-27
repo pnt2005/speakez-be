@@ -266,11 +266,11 @@ def questions(user, chat_id):
             return {'detail': f'questions with chat id {chat_id} not found'}, 404
         items = [{'id': record.id, 'content': record.content, 'time': record.time, 'chat_id': record.chat_id} for record in records]
         return items, 200
-    
+
     if request.method == 'POST':
-        records = Question.query.filter(Question.chat_id==chat_id).first()
+        records = Chat.query.filter(Chat.id==chat_id).all()
         if not records:
-            return {'detail': f'questions with chat id {chat_id} not found'}, 404
+            return {'detail': f'chat with id {chat_id} not found'}, 404
 
         time = datetime.now(timezone.utc) #+ timedelta(hours=7)
         item_content = request.json.get('content')
