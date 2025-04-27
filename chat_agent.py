@@ -106,12 +106,12 @@ def progress(state: State):
                     break
 
     user_answers = [m.content for m in messages if isinstance(m, HumanMessage)]
-    prompt = f"""You are an English tutor evaluating a student's response in a conversation practice.
+    prompt = f"""You are an language tutor evaluating a student's response in a conversation practice.
     Given the student's reply: "{user_answers}", return a JSON object with:
     - "fluency": score (1-10)
     - "grammar": score (1-10)
     - "vocabulary": score (1-10)
-    - "feedback": short suggestion for improvement
+    - "feedback": short suggestion for improvement in Vietnamese
     """
     res = llm.invoke([SystemMessage(content=prompt)])
     result = {"topic": topic,"scores": res.content}
