@@ -213,7 +213,7 @@ def chats(user):
         return items, 200
     
     if request.method == 'POST':
-        time = datetime.now(timezone.utc) + timedelta(hours=7)
+        time = datetime.now(timezone.utc) #+ timedelta(hours=7)
         item = Chat(user_id=user.id, time=time, status='start')
         db.session.add(item)
         db.session.commit()
@@ -270,17 +270,9 @@ def questions(user, chat_id):
     if request.method == 'POST':
         records = Question.query.filter(Question.chat_id==chat_id).first()
         if not records:
-            headers = {
-                'Authorization': token,
-                'Content-Type': 'application/json',
-            }
-            try:
-                chats_response = requests.post(f'http://127.0.0.1:5000/chats', headers=headers)
-            except: 
-                print(chats_response.status_code)
-            print(chats_response)
+            return {'detail': f'questions with chat id {chat_id} not found'}, 404
 
-        time = datetime.now(timezone.utc) + timedelta(hours=7)
+        time = datetime.now(timezone.utc) #+ timedelta(hours=7)
         item_content = request.json.get('content')
         item = Question(content=item_content, chat_id = chat_id, time=time)
         db.session.add(item)
@@ -302,7 +294,7 @@ def answers(user, chat_id):
     if request.method == 'POST':
         item_content = request.json.get('content')
         item_language = request.json.get('language')
-        time = datetime.now(timezone.utc) + timedelta(hours=7)
+        time = datetime.now(timezone.utc) #+ timedelta(hours=7)
         item = Answer(content=item_content, language=item_language, chat_id = chat_id, time=time)
         db.session.add(item)
         db.session.commit()
