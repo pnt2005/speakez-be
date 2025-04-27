@@ -198,7 +198,7 @@ def responseVoice(token, query, chat_id, language):
     except:
         print("Failed to post answer")
 
-    return {"text": text, "audio_url": file_url, "language": language}
+    return {"question": query, "text": text, "audio_url": file_url, "language": language}
 
 
 def response(token, query, chat_id):

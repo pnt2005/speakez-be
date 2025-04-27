@@ -330,8 +330,12 @@ def questions_voices(user, chat_id):
         file_bytes = file.read()
         new_file = Question_voice(content=file_bytes, chat_id = chat_id)
         db.session.add(new_file)
-        db.session.commit()
         ans = trans(token, file_bytes, file.filename, chat_id)
+
+        time = datetime.now(timezone.utc) #+ timedelta(hours=7)
+        item = Question(content=ans["question"], chat_id = chat_id, time=time)
+        db.session.add(item)
+        db.session.commit()
         return ans, 201
 
 
