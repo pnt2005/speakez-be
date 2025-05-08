@@ -1,3 +1,7 @@
+### front end: https://github.com/ngodinhan058/ProjectMobileFE_ADVEN
+### demo: 
+## https://drive.google.com/file/d/1c02e_SCTNiA4dNCtr2qrjohC-cpZxUZQ/view
+## https://drive.google.com/file/d/1tKLi5f2kKwnkvUFv1zgfq5yfsF90X7vK/view
 ## Hướng dẫn chạy ứng dụng
 
 # Bước 1: Tạo và kích hoạt virtual environment (venv)
