@@ -1,7 +1,12 @@
-### front end: https://github.com/ngodinhan058/ProjectMobileFE_ADVEN
-### demo: 
-## https://drive.google.com/file/d/1c02e_SCTNiA4dNCtr2qrjohC-cpZxUZQ/view
-## https://drive.google.com/file/d/1tKLi5f2kKwnkvUFv1zgfq5yfsF90X7vK/view
+## Ứng dụng giúp người dùng luyện tập hội thoại bằng ngoại ngữ thông qua trò chuyện với chatbot.
+## Tính năng:
+- Chatbot phản hồi theo ngữ cảnh
+- Phân tích độ phản xạ và gợi ý luyện tập
+- Ghi nhận kết quả và hiển thị tiến trình học
+## front end: https://github.com/ngodinhan058/ProjectMobileFE_ADVEN
+## demo: 
+- https://drive.google.com/file/d/1c02e_SCTNiA4dNCtr2qrjohC-cpZxUZQ/view
+- https://drive.google.com/file/d/1tKLi5f2kKwnkvUFv1zgfq5yfsF90X7vK/view
 ## Hướng dẫn chạy ứng dụng
 
 # Bước 1: Tạo và kích hoạt virtual environment (venv)
