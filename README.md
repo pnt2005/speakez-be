@@ -1,29 +1,28 @@
-## Ứng dụng giúp người dùng luyện tập hội thoại bằng ngoại ngữ thông qua trò chuyện với chatbot.
-## Tính năng:
-- Chatbot phản hồi theo ngữ cảnh
-- Phân tích độ phản xạ và gợi ý luyện tập
-- Ghi nhận kết quả và hiển thị tiến trình học
+## Application for Practicing Foreign Language Conversations with a Chatbot
+## Features:
+- Contextual chatbot responses
+- Analysis of reaction speed and practice suggestions
+- Tracking results and displaying learning progress
 ## front end: https://github.com/ngodinhan058/ProjectMobileFE_ADVEN
 ## demo: 
-- https://drive.google.com/file/d/1c02e_SCTNiA4dNCtr2qrjohC-cpZxUZQ/view
-- https://drive.google.com/file/d/1tKLi5f2kKwnkvUFv1zgfq5yfsF90X7vK/view
-## Hướng dẫn chạy ứng dụng
+- [https://drive.google.com/file/d/1c02e_SCTNiA4dNCtr2qrjohC-cpZxUZQ/view](https://docs.google.com/file/d/14MGkwFVHO9Xa5DNlk7xAMiRMpMLSE7JW/preview)
+## How to Run the Application
 
-# Bước 1: Tạo và kích hoạt virtual environment (venv)
-## Tạo virtual environment
+# Step 1: Create and activate a virtual environment (venv)
+## Create virtual environment
 python -m venv venv
-### hoặc
+### or
 python3 -m venv venv
-## Kích hoạt venv
+## Activate venv
 
-### Trên Windows
+### On Windows:
 venv\Scripts\activate
 
-# Bước 2: Cài đặt các thư viện cần thiết
+# Step 2: Install required libraries
 pip install -r requirements.txt
 
-# Bước 3: Chạy ứng dụng
+# Step 3: Run the application
 python app.py
 
-# Lưu ý: cần tạo các biến sau
+# Note: You need to set the following environment variables:
 OPENAI_API_KEY, DATABASE_URL, SECRET_KEY, MAIL_USERNAME, MAIL_PASSWORD
